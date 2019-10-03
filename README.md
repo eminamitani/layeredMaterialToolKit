@@ -6,7 +6,7 @@ of DFT calculations especially in layered materials.
 ASE,
 numpy
 
-##required files
+## required files
 Normaly, three files are required to setup calculation condition.
 The name of files are not specified, here I add some explanation on sample files including this repository.
 
