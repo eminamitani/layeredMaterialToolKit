@@ -126,6 +126,61 @@ class espresso:
 
         return
 
+    def gather_optimize_results(self,logfile):
+        with open(logfile,'r') as f:
+            dirs=f.readlines()
+
+        results=[]
+
+        for d in dirs:
+            #parse directory name
+            #directory name is prefix-a-latticeConstant
+            latticeConstant=float(d.split('-')[-1].rstrip('\n'))
+
+            #in optimize_lattice_constant, standard output is set to scf.out
+            scfout=os.path.join(d.rstrip('\n'),'scf.out')
+            with open(scfout,'r') as f:
+                lines=f.readlines()
+
+            final = [s for s in lines if re.match('\!.+total.*', s)]
+            tf = final[-1].strip("\n").rstrip("Ry").split("=")
+            fene = float(tf[1])
+
+            results.append([latticeConstant,fene])
+
+        sortedData = sorted(results, key=lambda x: (x[0]))
+
+        fdata = open("results.txt", "w")
+        fdata.write("# a   energy(Ry) \n")
+        for data in sortedData:
+            fdata.write(str(data[0]) + "  " + str(data[1]) +  " \n")
+        fdata.close()
+
+        #create scf calculation input from most stable structure
+        energySort=sorted(results,key=lambda x:(x[1]))
+        targetdir=self.config['formula']+"-a-"+str(energySort[0][0])
+        mostStable=os.path.join(targetdir,'scf.out')
+        print(mostStable)
+
+        relaxresult=read(mostStable,format='espresso-out')
+        #change tag to scf
+        self.input_data['control']['calculation']='scf'
+        #create dummy input
+        calc = Espresso(input_data=self.input_data, psuedopotentials=self.pseudopotentials,
+                        kpts=(16,16,1),label=self.config['formula']+'-optimized')
+        #kpoints & psuedo is dummy!!
+        calc.write_input(relaxresult)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
