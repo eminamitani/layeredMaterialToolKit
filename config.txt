@@ -1,0 +1,7 @@
+{
+'type':'MX2',
+'formula':'MoS2',
+'path':'/home/emi/espresso/install-test/gitLab-withmyRevision/q-e/bin',
+'qeoption':'-npool 24',
+'mpicommand':'/home/local/openmpi-1.8.8/bin/mpirun -np 24',
+}

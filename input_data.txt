@@ -1,0 +1,11 @@
+{
+    'control': {
+        'outdir': './',
+        'pseudo_dir': '../pseudo',
+        'wf_collect': True,
+        'disk_io':'low',
+    },
+    'system': {
+        'ecutwfc': 70,
+        'ecutrho': 560},
+}
