@@ -4,6 +4,8 @@
         'pseudo_dir': '../pseudo',
         'wf_collect': True,
         'disk_io':'low',
+        'etot_conv_thr':1.0e-08,
+        'forc_conv_thr':1.0e-05,
     },
     'system': {
         'ecutwfc': 70,

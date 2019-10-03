@@ -109,12 +109,12 @@ class espresso:
         input_file_name=self.config['formula']+".pwi"
         #generate run script
         with open("run.sh" ,"w") as f:
-            f.write(self.PBS_header)
+            f.write(self.PBS_header+'\n')
             directory=self.config['formula']+"-a-"
             f.write("for dir in ./"+directory+"*; do \n")
             f.write("echo $dir \n")
             f.write("cd $dir \n")
-            f.write(self.config['mpicommand'] +" "+self.config['path']+"pw.x " +self.config['qeoption']+ " -input " + input_file_name + " > scf.out \n")
+            f.write(self.config['mpicommand'] +" "+self.config['path']+"/pw.x " +self.config['qeoption']+ " -input " + input_file_name + " > scf.out \n")
             f.write("cd ../ \n")
             f.write("done \n")
 
