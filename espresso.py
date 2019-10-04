@@ -171,6 +171,62 @@ class espresso:
         #kpoints & psuedo is dummy!!
         calc.write_input(relaxresult)
 
+    def create_band_input(self,scf_file, band_config):
+        '''
+        :param scf_file: pw.x input file after relaxation
+        :param band_config: setup for band calculation
+        :return:
+        '''
+
+        scf=read(scf_file,format='espresso-in')
+        lat=scf.cell.get_bravais_lattice()
+        #get special point list
+        sps=lat.get_special_points()
+
+        #remove point in z-direction (because 2D system)
+        keys=sps.keys()
+        sps_copy=sps.copy()
+        for key in keys:
+            if sps[key][2] > 0.0:
+                del sps_copy[key]
+
+
+        sp_inplane=''.join(list(sps_copy))
+        #better to finish by Gamma-point
+        sp_inplane=sp_inplane+'G'
+        print("band-path:"+sp_inplane)
+        path=scf.cell.bandpath(sp_inplane, npoints=100)
+
+        self.input_data['control'].update({'calculation': 'scf'})
+        calc = Espresso(input_data=self.input_data, psuedopotentials=self.pseudopotentials,
+                        kpts=(24,24,1),label=self.config['formula']+'-scf')
+        calc.write_input(scf)
+        scf_file_name = self.config['formula'] + "-scf.pwi"
+        self.rename_psuedo(scf_file_name)
+
+
+
+        self.input_data['control'].update({'calculation':'bands',
+                                           'restart_mode':'restart',
+                                           'verbosity':'high'})
+        calc = Espresso(input_data=self.input_data, psuedopotentials=self.pseudopotentials,
+                        kpts=path,label=self.config['formula']+'-band')
+        calc.write_input(scf)
+        band_file_name = self.config['formula'] + "-band.pwi"
+        self.rename_psuedo(band_file_name)
+
+        #generate run script
+        with open("run.sh" ,"w") as f:
+            f.write(self.PBS_header+'\n')
+            #scf
+            f.write(self.config['mpicommand'] +" "+self.config['path']+"/pw.x " +self.config['qeoption']+ " -input " + scf_file_name + " > scf.out \n")
+            #then band
+            f.write(self.config['mpicommand'] + " " + self.config['path'] + "/pw.x " + self.config[
+                'qeoption'] + " -input " + band_file_name + " > band.out \n")
+
+
+
+
 
 
 
