@@ -1,0 +1,6 @@
+{
+'nscfkpts':[24,24,1],
+'nbandkpts':100,
+'lsym':True,
+'no_overlap':True,
+}

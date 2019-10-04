@@ -178,6 +178,9 @@ class espresso:
         :return:
         '''
 
+        with open(band_config, 'r') as inf:
+            band_config=literal_eval(inf.read())
+
         scf=read(scf_file,format='espresso-in')
         lat=scf.cell.get_bravais_lattice()
         #get special point list
@@ -195,11 +198,11 @@ class espresso:
         #better to finish by Gamma-point
         sp_inplane=sp_inplane+'G'
         print("band-path:"+sp_inplane)
-        path=scf.cell.bandpath(sp_inplane, npoints=100)
+        path=scf.cell.bandpath(sp_inplane, npoints=band_config['nbandkpts'])
 
         self.input_data['control'].update({'calculation': 'scf'})
         calc = Espresso(input_data=self.input_data, psuedopotentials=self.pseudopotentials,
-                        kpts=(24,24,1),label=self.config['formula']+'-scf')
+                        kpts=band_config['nscfkpts'],label=self.config['formula']+'-scf')
         calc.write_input(scf)
         scf_file_name = self.config['formula'] + "-scf.pwi"
         self.rename_psuedo(scf_file_name)
