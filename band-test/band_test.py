@@ -1,9 +1,8 @@
 import sys
 import pathlib
-current_dir = pathlib.Path(__file__).resolve().parent
-sys.path.append( str(current_dir) + '/../' )
-from espresso import *
-import os
+#current_dir = pathlib.Path(__file__).resolve().parent
+#sys.path.append( str(current_dir) + '/../' )
+from layeredMaterialToolKit.espresso import *
 
 input_data = "input_data.txt"
 pseudo_dir = "../pseudo"

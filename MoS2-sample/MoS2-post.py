@@ -1,13 +1,8 @@
-from ase.build import mx2
-from ase import Atoms
-from ase.io import read, write
-from ase.calculators.espresso import Espresso
 import sys
 import pathlib
 current_dir = pathlib.Path(__file__).resolve().parent
 sys.path.append( str(current_dir) + '/../' )
-from espresso import *
-import os
+from layeredMaterialToolKit.espresso import *
 
 input_data = "input_data.txt"
 pseudo_dir = "./pseudo"
