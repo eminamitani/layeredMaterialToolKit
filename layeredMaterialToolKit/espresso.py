@@ -6,6 +6,7 @@ import shutil
 import numpy as np
 from layeredMaterialToolKit.monolayer import *
 import datetime
+from ase.dft.kpoints import monkhorst_pack
 
 class espresso:
 
@@ -239,6 +240,26 @@ class espresso:
                 'qeoption'] + " -input " + band_file_name + " > band.out \n")
             f.write(self.config['mpicommand'] + " " + self.config['path'] + "/bands.x " + self.config[
                 'qeoption'] + " -input " + "bandsx.in" + " > bandsx.out \n")
+
+
+    def create_phonon_input(self,scf_file,phonon_config_file):
+
+
+        with open(phonon_config_file, 'r') as inf:
+            phonon_config=literal_eval(inf.read())
+
+        self.input_data['control'].update({'calculation': 'scf'})
+        scf = read(scf_file, format='espresso-in')
+        calc = Espresso(input_data=self.input_data, psuedopotentials=self.pseudopotentials,
+                        kpts=phonon_config['nscfkpts'],label=self.config['formula']+'-scf')
+        calc.write_input(scf)
+        scf_file_name = self.config['formula'] + "-scf.pwi"
+        self.rename_psuedo(scf_file_name)
+
+        ##wondering about how to know the irreducible q-point information
+
+
+
 
 
 
