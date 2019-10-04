@@ -1,0 +1,10 @@
+{
+'nscfkpts':[24,24,1],
+'nphmesh':[6,6,1],
+'njobs':4,
+'fildvscf':'dvscf',
+'tr2_ph':1.0e-16,
+'ldisp':True,
+'epsil':True,
+'trans':True,
+}

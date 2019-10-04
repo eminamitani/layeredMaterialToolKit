@@ -6,7 +6,7 @@ import shutil
 import numpy as np
 from layeredMaterialToolKit.monolayer import *
 import datetime
-from ase.dft.kpoints import monkhorst_pack
+import spglib
 
 class espresso:
 
@@ -248,7 +248,10 @@ class espresso:
         with open(phonon_config_file, 'r') as inf:
             phonon_config=literal_eval(inf.read())
 
+
         self.input_data['control'].update({'calculation': 'scf'})
+        #change the position of psuedo_dir because the phonon job will be running in the lower directory
+        self.input_data['control'].update({'pseudo_dir': '../../'})
         scf = read(scf_file, format='espresso-in')
         calc = Espresso(input_data=self.input_data, psuedopotentials=self.pseudopotentials,
                         kpts=phonon_config['nscfkpts'],label=self.config['formula']+'-scf')
@@ -256,7 +259,103 @@ class espresso:
         scf_file_name = self.config['formula'] + "-scf.pwi"
         self.rename_psuedo(scf_file_name)
 
-        ##wondering about how to know the irreducible q-point information
+        #obtain the number of irreducible q-point
+        #convert necessary information from ASE Atoms object
+        lattice = list(scf.get_cell())
+        #to use spglib, need to get scaled position in ASE!
+        positions = scf.get_scaled_positions()
+        numbers = scf.get_atomic_numbers()
+        cell = (lattice, positions, numbers)
+
+        print("symmetry of input structure:"+str(spglib.get_spacegroup(cell, symprec=1e-5)))
+        mapping, grid = spglib.get_ir_reciprocal_mesh(phonon_config['nphmesh'], cell, is_shift=[0, 0, 0])
+        irq=len(np.unique(mapping))
+        print("number of irreducible q-point:"+str(irq))
+
+
+        # split into several jobs
+        # loadbarance with napsack method
+        loadmin = []
+        loadmax = []
+
+        work = int(irq / phonon_config['njobs'])
+        work2 = irq  % phonon_config['njobs']
+        for i in range(phonon_config['njobs']):
+            minval = 1 + i * work + min(i, work2)
+            loadmin.append(minval)
+            loadmax.append(minval + work - 1)
+            if (work2 > i):
+                loadmax[i] = loadmax[i] + 1
+
+        # making directory for each split job
+
+        dirlist = []
+
+        for i in range(phonon_config['njobs']):
+            dirname = "phjob_" + str(i)
+            dirlist.append(dirname)
+            try:
+                os.mkdir(dirname)
+            except OSError:
+                print('directry already exist')
+            shutil.copy2(scf_file_name, dirname)
+
+            os.chdir(dirname)
+            phononInput = self.config['formula'] + ".phonon.in"
+
+            fp = open(phononInput, "w")
+            fp.write(self.config['formula']  + " phonon \n")
+            fp.write('&inputph \n')
+            fp.write("outdir=" + "\'"+self.input_data['control']['outdir'] +"\' \n")
+            fp.write("tr2_ph="+ str(phonon_config['tr2_ph']) +"\n")
+            fp.write("fildvscf="+ "\'"+phonon_config['fildvscf'] +"\' \n")
+            fp.write('alpha_mix(1)=0.2 \n')
+            fp.write("trans="+ "." + str(phonon_config['trans']).lower() + ". \n")
+            fp.write("ldisp="+"." + str(phonon_config['ldisp']).lower() + ". \n")
+            fp.write("epsil="+"." + str(phonon_config['epsil']).lower() + ". \n")
+
+            fp.write('nq1=' + str(phonon_config["nphmesh"][0])
+                     + ',nq2=' + str(phonon_config["nphmesh"][1])
+                     + ',nq3=' + str(phonon_config["nphmesh"][2]) + '\n')
+
+            fp.write('start_q=' + str(loadmin[i]) + ' \n')
+            fp.write('last_q=' + str(loadmax[i]) + ' \n')
+
+            fp.write('/\n')
+            fp.close()
+            # generate run script
+            with open("phrun.sh", "w") as f:
+                f.write(self.PBS_header + '\n')
+                # scf
+                f.write(self.config['mpicommand'] + " " + self.config['path'] + "/pw.x " + self.config[
+                    'qeoption'] + " -input " + scf_file_name + " > scf.out \n")
+                # then band
+                f.write(self.config['mpicommand'] + " " + self.config['path'] + "/ph.x " + self.config[
+                    'qeoption'] + " -input " + phononInput + " > ph.out \n")
+
+            os.chdir('../')
+
+        # bash script for running job at once
+
+        fallrun = open("runall.sh", "w")
+        fallrun.write("#!/bin/sh \n")
+
+        for i in dirlist:
+            fallrun.write("cd " + i + "\n")
+            fallrun.write(self.config['pbscommand'] +"phrun.sh \n")
+            fallrun.write("cd ../ \n")
+
+        fallrun.close()
+
+        # output directry list for post process purpose
+        fdirlist = open("directoryList.txt", "w")
+
+        for i in dirlist:
+            fdirlist.write(i + "\n")
+
+        fdirlist.close()
+
+
 
 
 
