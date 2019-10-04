@@ -5,5 +5,6 @@ setup(
     paskages=find_packages(),
     install_requires=[
         'ase',
+        'spglib',
     ],
 )

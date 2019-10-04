@@ -251,7 +251,7 @@ class espresso:
 
         self.input_data['control'].update({'calculation': 'scf'})
         #change the position of psuedo_dir because the phonon job will be running in the lower directory
-        self.input_data['control'].update({'pseudo_dir': '../../'})
+        self.input_data['control'].update({'pseudo_dir': os.path.join('../',self.input_data['control']['pseudo_dir'])})
         scf = read(scf_file, format='espresso-in')
         calc = Espresso(input_data=self.input_data, psuedopotentials=self.pseudopotentials,
                         kpts=phonon_config['nscfkpts'],label=self.config['formula']+'-scf')
@@ -342,7 +342,7 @@ class espresso:
 
         for i in dirlist:
             fallrun.write("cd " + i + "\n")
-            fallrun.write(self.config['pbscommand'] +"phrun.sh \n")
+            fallrun.write(self.config['pbscommand'] +"  phrun.sh \n")
             fallrun.write("cd ../ \n")
 
         fallrun.close()
