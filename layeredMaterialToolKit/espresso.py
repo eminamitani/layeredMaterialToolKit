@@ -221,8 +221,8 @@ class espresso:
         #input file for bands.x
         with open('bandsx.in','w') as bf:
             bf.write("&bands \n")
-            bf.write("outdir=" + self.input_data['control']['outdir'] +"\n")
-            bf.write("filband=" + self.config['formula']+".band \n")
+            bf.write("outdir=" + "\'"+self.input_data['control']['outdir'] +"\' \n")
+            bf.write("filband=" + "\'"+ self.config['formula']+".band\' \n")
             bf.write("lsym=" + "."+str(band_config['lsym']).lower()+". \n")
             bf.write("no_overlap=" + "." + str(band_config['no_overlap']).lower() + ". \n")
             bf.write("/")
