@@ -7,4 +7,5 @@
 'ldisp':True,
 'epsil':True,
 'trans':True,
+'search_sym':False,
 }

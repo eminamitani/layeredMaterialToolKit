@@ -313,7 +313,8 @@ class espresso:
             fp.write("trans="+ "." + str(phonon_config['trans']).lower() + ". \n")
             fp.write("ldisp="+"." + str(phonon_config['ldisp']).lower() + ". \n")
             fp.write("epsil="+"." + str(phonon_config['epsil']).lower() + ". \n")
-
+            #avoid symmetry error in hexagonal system
+            fp.write("search_sym=" + "." + str(phonon_config['search_sym']).lower() + ". \n")
             fp.write('nq1=' + str(phonon_config["nphmesh"][0])
                      + ',nq2=' + str(phonon_config["nphmesh"][1])
                      + ',nq3=' + str(phonon_config["nphmesh"][2]) + '\n')
