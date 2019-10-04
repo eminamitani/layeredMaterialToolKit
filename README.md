@@ -6,6 +6,15 @@ of DFT calculations especially in layered materials.
 ASE > 3.18.1, 
 numpy
 
+## install
+This program is still constructing status.
+Please use virtualenv & be careful to install.  
+```
+git clone https://github.com/eminamitani/layeredMaterialToolKit.git
+cd cd layeredMaterialToolKit/
+pip install -e .
+```
+
 ## required files
 Normaly, three files are required to setup calculation condition.
 The name of files are not specified, here I add some explanation on sample files including this repository.
