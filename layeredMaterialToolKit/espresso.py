@@ -169,14 +169,15 @@ class espresso:
         #kpoints & psuedo is dummy!!
         calc.write_input(relaxresult)
 
-    def create_band_input(self,scf_file, band_config):
+    def create_band_input(self,scf_file, band_config_file):
         '''
         :param scf_file: pw.x input file after relaxation
         :param band_config: setup for band calculation
         :return:
         '''
 
-        with open(band_config, 'r') as inf:
+        band_config={}
+        with open(band_config_file, 'r') as inf:
             band_config=literal_eval(inf.read())
 
         scf=read(scf_file,format='espresso-in')
@@ -216,6 +217,18 @@ class espresso:
         band_file_name = self.config['formula'] + "-band.pwi"
         self.rename_psuedo(band_file_name)
 
+
+        #input file for bands.x
+        with open('bandsx.in','w') as bf:
+            bf.write("&bands \n")
+            bf.write("outdir=" + self.input_data['control']['outdir'] +"\n")
+            bf.write("filband=" + self.config['formula']+".band \n")
+            bf.write("lsym=" + "."+str(band_config['lsym']).lower()+". \n")
+            bf.write("no_overlap=" + "." + str(band_config['no_overlap']).lower() + ". \n")
+            bf.write("/")
+
+
+
         #generate run script
         with open("run.sh" ,"w") as f:
             f.write(self.PBS_header+'\n')
@@ -224,6 +237,8 @@ class espresso:
             #then band
             f.write(self.config['mpicommand'] + " " + self.config['path'] + "/pw.x " + self.config[
                 'qeoption'] + " -input " + band_file_name + " > band.out \n")
+            f.write(self.config['mpicommand'] + " " + self.config['path'] + "/bands.x " + self.config[
+                'qeoption'] + " -input " + "bandsx.in" + " > bandsx.out \n")
 
 
 
