@@ -7,6 +7,7 @@ import numpy as np
 from layeredMaterialToolKit.monolayer import *
 import datetime
 import spglib
+from ase import cell
 
 class espresso:
 
@@ -469,6 +470,12 @@ class espresso:
         # phonon band
         scf = read(os.path.join('../',scf_file), format='espresso-in')
         lat = scf.cell.get_bravais_lattice()
+        #scaled reciprocal lattice
+        rec= scf.get_reciprocal_cell()*lat.vars()['a']
+        lat = scf.cell.get_bravais_lattice()
+        #print(scf.cell)
+        #print(lat)
+        #print(lat.vars())
         # get special point list
         sps = lat.get_special_points()
 
@@ -483,7 +490,18 @@ class espresso:
         # better to finish by Gamma-point
         sp_inplane = sp_inplane + 'G'
         print("band-path:" + sp_inplane)
+
         path = scf.cell.bandpath(sp_inplane, npoints=phonon_config['nbandkpts'])
+
+        #to fit the format in phonon band calculation
+        path_in_dyn=[]
+        for kpt in path.kpts:
+            coord=rec[0]*kpt[0]+rec[1]*kpt[1]+rec[2]*kpt[2]
+            #print(coord)
+            path_in_dyn.append(coord)
+
+        #print(path_in_dyn)
+
 
         matdyn = open("matdyn.in.freq", "w")
         matdyn.write("&input \n")
@@ -493,7 +511,7 @@ class espresso:
         matdyn.write("dos=.false. \n")
         matdyn.write("/ \n")
         matdyn.write(str(len(path.kpts)) + "\n")
-        for i in path.kpts:
+        for i in path_in_dyn:
             matdyn.write(str(i[0]) + "   " + str(i[1]) + "  " + str(i[2]) + "  0.0000 \n")
 
         matdyn.close()
