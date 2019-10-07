@@ -19,6 +19,10 @@ class espresso:
 
         print('espresso base setup')
         print(self.input_data)
+        # set default prefix:pwscf
+        self.default_prefix = 'pwscf'
+        if ('prefix' not in input_data):
+            self.input_data['prefix']=self.default_prefix
 
         #constracting psuedopotentials dictionary from psuedo_dir
         #assume elemental name_option.upf(# UPF)
@@ -357,23 +361,142 @@ class espresso:
         fdirlist.close()
 
 
+    def gather_phonon_info(self,scf_file,phonon_config_file):
+        '''
+        gather phonon information from splitted job & create inputs to obtain phonon_band
 
+        :return:
+        '''
+        with open(phonon_config_file, 'r') as inf:
+            phonon_config = literal_eval(inf.read())
 
+        try:
+            os.mkdir('phononBand')
+        except OSError:
+            print('directory already exist')
 
+        # for epw
 
+        try:
+            os.mkdir('save')
+        except OSError:
+            print('directory already exist')
 
+        try:
+            os.mkdir('save/' + self.input_data['prefix'] + ".phsave")
+        except OSError:
+            print('phsave directory already exist')
 
+        phononInput = self.config['formula'] + ".phonon.in"
 
+        fdir = open('directoryList.txt', "r")
+        lines = fdir.readlines()
 
+        # gather band/epw data & remove unnecessary temporary files
 
+        for i in lines:
+            os.chdir(i.strip('\n'))
 
+            start_q = 0
+            last_q = 0
 
+            fin = open(phononInput)
+            inputLines = fin.readlines()
 
+            for line in inputLines:
+                if (line.find("start_q") >= 0):
+                    start_q = int(line.strip("").strip("\n").split("=")[1])
+                if (line.find("last_q") >= 0):
+                    last_q = int(line.strip("").strip("\n").split("=")[1])
 
+            if (start_q == 1):
 
+                if (self.input_data['prefix'] == self.default_prefix):
+                    os.system('cp ' + ' matdyn0' + ' ../phononBand/')
+                else:
+                    os.system('cp ' + self.input_data['prefix'] + '.dyn0' + ' ../phononBand/')
 
+            qpts = np.arange(start_q, last_q + 1)
+            for i in qpts:
+                if (self.input_data['prefix'] == self.default_prefix):
+                    os.system('cp ' + 'matdyn' + str(i) + ' ../phononBand/')
+                    os.system('cp ' + 'matdyn' + str(i) + ' ../save/' + self.input_data['prefix'] + '.dyn_q' + str(i))
+                else:
+                    os.system('cp ' + self.input_data['prefix'] + '.dyn' + str(i) + ' ../phononBand/')
+                    os.system('cp ' + self.input_data['prefix'] + '.dyn' + str(i) + ' ../save/' + self.input_data[
+                        'prefix'] + '.dyn_q' + str(i))
 
+            # dvscf for epw
+            if (start_q == 1):
+                qpts = np.arange(start_q + 1, last_q + 1)
+            else:
+                qpts = np.arange(start_q, last_q + 1)
+            if (start_q == 1):
+                # special case for Gamma-point
+                os.system('cp _ph0/' + self.input_data['prefix'] + '.dvscf1 ../save/' + self.input_data[
+                    'prefix'] + '.dvscf_q1')
+                os.system('cp _ph0/' + self.input_data['prefix'] + '.phsave/* ../save/' + self.input_data[
+                    'prefix'] + '.phsave/')
+            else:
+                if (phonon_config['wfClean'] == True):
+                    os.system('rm' + self.input_data['prefix'] + '/*wfc*')
 
+            for i in qpts:
+                os.system('cp _ph0/' + self.input_data['prefix'] + '.q_' + str(
+                    i) + '/' + self.input_data['prefix'] + '.dvscf1 ../save/' + self.input_data[
+                              'prefix'] + '.dvscf_q' + str(i))
+                os.system('cp _ph0/' + self.input_data['prefix'] + '.phsave/* ../save/' + self.input_data[
+                    'prefix'] + '.phsave/')
 
+                if (phonon_config['wfClean'] == True):
+                    os.system('rm _ph0/' + self.input_data['prefix'] + '.q_' + str(i) + '/*wfc*')
 
+            os.chdir('../')
 
+        # make q2r.x input
+        os.chdir("phononBand")
+        q2r = open("q2r.in", "w")
+        q2r.write("&input \n")
+        q2r.write("zasr=\'simple\' \n")
+        q2r.write("fildyn=\'" + self.input_data['prefix'] + ".dyn\' \n")
+        q2r.write("flfrc=\'" + self.input_data['prefix'] + ".fc\' \n")
+        q2r.write("/")
+        q2r.close()
+
+        if (phonon_config['calcRun'] == True):
+            os.system(self.config['path'] + '/q2r.x  < q2r.in')
+
+        # phonon band
+        scf = read(os.path.join('../',scf_file), format='espresso-in')
+        lat = scf.cell.get_bravais_lattice()
+        # get special point list
+        sps = lat.get_special_points()
+
+        # remove point in z-direction (because 2D system)
+        keys = sps.keys()
+        sps_copy = sps.copy()
+        for key in keys:
+            if sps[key][2] > 0.0:
+                del sps_copy[key]
+
+        sp_inplane = ''.join(list(sps_copy))
+        # better to finish by Gamma-point
+        sp_inplane = sp_inplane + 'G'
+        print("band-path:" + sp_inplane)
+        path = scf.cell.bandpath(sp_inplane, npoints=phonon_config['nbandkpts'])
+
+        matdyn = open("matdyn.in.freq", "w")
+        matdyn.write("&input \n")
+        matdyn.write("asr=\'simple\' \n")
+        matdyn.write("flfrc= \'" + self.input_data['prefix'] + ".fc\' \n")
+        matdyn.write("flfrq=\'" + self.input_data['prefix'] + ".freq\' \n")
+        matdyn.write("dos=.false. \n")
+        matdyn.write("/ \n")
+        matdyn.write(str(len(path.kpts)) + "\n")
+        for i in path.kpts:
+            matdyn.write(str(i[0]) + "   " + str(i[1]) + "  " + str(i[2]) + "  0.0000 \n")
+
+        matdyn.close()
+
+        if (phonon_config['calcRun'] == True):
+            os.system(self.config['path'] + '/matdyn.x < matdyn.in.freq')

@@ -8,4 +8,7 @@
 'epsil':True,
 'trans':True,
 'search_sym':False,
+'nbandkpts':100,
+'wfClean':True,
+'calcRun':False,
 }
