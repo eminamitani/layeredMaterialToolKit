@@ -10,5 +10,5 @@ config = "config.txt"
 PBS_header="PBS_header.txt"
 
 esp = espresso(input_data=input_data, pseudo_dir=pseudo_dir, config=config, PBS_header=PBS_header)
-esp.optimize_lattice_constant(initial_lattice_constant=3.1,range=5,samples=20,kpts=(16,16,1),vacuum=25.0)
+esp.generate_different_lattice_constant_inputs(initial_lattice_constant=3.1, range=5, samples=20, kpts=(16, 16, 1), vacuum=25.0)
 

@@ -69,7 +69,7 @@ class espresso:
 
 
 
-    def optimize_lattice_constant(self, initial_lattice_constant, range, samples, kpts, vacuum):
+    def generate_different_lattice_constant_inputs(self, initial_lattice_constant, range, samples, kpts, vacuum):
         '''
 
         :param initial_lattice_constant: center value to search the lattice constant
@@ -141,7 +141,7 @@ class espresso:
             #directory name is prefix-a-latticeConstant
             latticeConstant=float(d.split('-')[-1].rstrip('\n'))
 
-            #in optimize_lattice_constant, standard output is set to scf.out
+            #in generate_different_lattice_constant_inputs, standard output is set to scf.out
             scfout=os.path.join(d.rstrip('\n'),'scf.out')
             with open(scfout,'r') as f:
                 lines=f.readlines()
@@ -413,14 +413,15 @@ class espresso:
             if (start_q == 1):
 
                 if (self.input_data['prefix'] == self.default_prefix):
-                    os.system('cp ' + ' matdyn0' + ' ../phononBand/')
+                    #rename for avoid problem to running q2r.x
+                    os.system('cp ' + ' matdyn0' + ' ../phononBand/'+self.input_data['prefix']+'.dyn0')
                 else:
                     os.system('cp ' + self.input_data['prefix'] + '.dyn0' + ' ../phononBand/')
 
             qpts = np.arange(start_q, last_q + 1)
             for i in qpts:
                 if (self.input_data['prefix'] == self.default_prefix):
-                    os.system('cp ' + 'matdyn' + str(i) + ' ../phononBand/')
+                    os.system('cp ' + 'matdyn' + str(i) + ' ../phononBand/'+self.input_data['prefix']+'.dyn'+str(i))
                     os.system('cp ' + 'matdyn' + str(i) + ' ../save/' + self.input_data['prefix'] + '.dyn_q' + str(i))
                 else:
                     os.system('cp ' + self.input_data['prefix'] + '.dyn' + str(i) + ' ../phononBand/')
