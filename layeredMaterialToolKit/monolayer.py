@@ -14,7 +14,17 @@ def monolayer_MX2(formula, a, thickness,vacuum):
     return slab
 
 def monolayer_Xene(formula, a, buckling, vacuum):
-    positions=[[math.sqrt(3.0)/3.0,0.0,buckling/2.0],[math.sqrt(3.0)/3.0*2.0,0.0,-buckling/2.0]]
+    if vacuum is not None:
+        buckling=buckling/vacuum
+
+    positions=[[2/3, 1/3,buckling/2.0],[1/3,2/3,-buckling/2.0]]
+    cell=[[a, 0, 0], [-a/2, a * 3**0.5 / 2, 0], [0, 0, 0]]
+    atoms = Atoms(formula, positions=positions, cell=cell, pbc=(1, 1, 0))
+    atoms.set_scaled_positions(positions)
+    if vacuum is not None:
+        atoms.center(vacuum, axis=2)
+    return atoms
+
 
 
 

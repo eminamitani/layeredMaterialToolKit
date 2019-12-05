@@ -104,6 +104,9 @@ class espresso:
 
             if(self.config['type']=='MX2'):
                 atoms=monolayer_MX2(self.config['formula'], a, initial_lattice_constant, vacuum)
+            elif(self.config['type'] == 'Xene'):
+                atoms = monolayer_Xene(self.config['formula'], a, self.config['buckling'], vacuum)
+
 
             calc.write_input(atoms)
             input_file_name=self.config['formula']+".pwi"

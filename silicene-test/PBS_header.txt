@@ -1,0 +1,8 @@
+#!/bin/csh
+#$ -cwd
+#$ -V -S /bin/bash
+#$ -N layered
+#$ -o stdout
+#$ -e stdout
+#$ -q all.q
+#$ -pe x24 24
